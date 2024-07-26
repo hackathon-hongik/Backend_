@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'communities',
     'notes',
     'recommendations',
+    'users',
     
     'corsheaders',
 ]
