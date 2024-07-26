@@ -13,9 +13,9 @@ class Book(models.Model):
         db_table = 'books'
         
 class MyBookStatus(models.TextChoices):
-    READING = 'READING', 'Reading'
-    READ = 'READ', 'Read'
-    WISH = 'WISH', 'Wish'
+    READING = '지금 읽고 있는 책', 'Reading'
+    READ = '지금까지 읽은 책', 'Read'
+    WISH = '찜해둔 책', 'Wish'
     
 
 class MyBook(models.Model):
@@ -28,6 +28,15 @@ class MyBook(models.Model):
     @property
     def readRate(self):
         return self.readpage / self.totalpage if self.readpage !=0 else 0
+    
+
+class Desk(models.Model):
+    member = models.OneToOneField(Member, on_delete=models.CASCADE)
+    mybook = models.ForeignKey(MyBook, on_delete=models.CASCADE)
+    readcount = models.IntegerField()
+    readingcount = models.IntegerField()
+    wishcount = models.IntegerField()
+    
     
     
     
