@@ -22,20 +22,15 @@ class MyBook(models.Model):
     member = models.ForeignKey(Member, on_delete= models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     status = models.CharField(max_length=128, choices=MyBookStatus.choices, default=MyBookStatus.WISH)
-    totalpage = models.IntegerField()
-    readpage = models.IntegerField()
-    
-    @property
-    def readRate(self):
-        return self.readpage / self.totalpage if self.readpage !=0 else 0
+
     
 
 class Desk(models.Model):
     member = models.OneToOneField(Member, on_delete=models.CASCADE)
     mybook = models.ForeignKey(MyBook, on_delete=models.CASCADE)
-    readcount = models.IntegerField()
-    readingcount = models.IntegerField()
-    wishcount = models.IntegerField()
+    read_count = models.IntegerField()
+    reading_count = models.IntegerField()
+    wish_count = models.IntegerField()
     
     
     
