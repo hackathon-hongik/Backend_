@@ -13,9 +13,9 @@ class Book(models.Model):
         db_table = 'books'
         
 class MyBookStatus(models.TextChoices):
-    READING = '지금 읽고 있는 책', 'Reading'
-    READ = '지금까지 읽은 책', 'Read'
-    WISH = '찜해둔 책', 'Wish'
+    READING = 'reading'
+    READ = 'read'
+    WISH = 'wish'
     
 
 class MyBook(models.Model):
@@ -27,10 +27,23 @@ class MyBook(models.Model):
 
 class Desk(models.Model):
     member = models.OneToOneField(Member, on_delete=models.CASCADE)
-    mybook = models.ForeignKey(MyBook, on_delete=models.CASCADE)
-    read_count = models.IntegerField()
-    reading_count = models.IntegerField()
-    wish_count = models.IntegerField()
+    mybooks = models.ManyToManyField(MyBook)
+    
+    @property
+    def read_count(self):
+        return self.mybooks.filter(status=MyBookStatus.READ).count()
+    
+    @property
+    def reading_count(self):
+        return self.mybooks.filter(status=MyBookStatus.READING).count()
+    
+    @property
+    def wish_count(self):
+        return self.mybooks.filter(status=MyBookStatus.WISH).count()
+
+    class Meta:
+        db_table = 'desks'
+    
     
     
     
