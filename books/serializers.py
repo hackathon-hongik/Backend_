@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from books.models import Desk, MyBook, MyBookStatus, Book
+from books.models import Book, MyBook, Desk
 
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
@@ -33,13 +33,14 @@ class DeskSerializer(serializers.ModelSerializer):
         fields = ['mybooks', 'reading_count', 'read_count', 'wish_count']
 
     def get_reading_count(self, obj):
-        return MyBook.objects.filter(member=obj.member, status=MyBookStatus.READING).count()
+        return obj.reading_count
 
     def get_read_count(self, obj):
-        return MyBook.objects.filter(member=obj.member, status=MyBookStatus.READ).count()
+        return obj.read_count
 
     def get_wish_count(self, obj):
-        return MyBook.objects.filter(member=obj.member, status=MyBookStatus.WISH).count()
+        return obj.wish_count
+
 
     
     
