@@ -19,16 +19,34 @@ def add_book_to_status(request, memberId, status):
         book, created = Book.objects.get_or_create(isbn=book_data['isbn'], defaults=book_data)   
         mybook, created = MyBook.objects.get_or_create(member=member, book=book)
         
-        if not created and status == mybook.status:
-            return Response({'error': 'This book is already in your list with the same status.'}, status=HTTPStatus.HTTP_409_CONFLICT)
+        desk, desk_created = Desk.objects.get_or_create(member=member)
+        
+        if not created:
+            if mybook.status == status:
+                return Response({'error': 'This book is already in your list with the same status.'}, status=HTTPStatus.HTTP_409_CONFLICT)
+            else:
+                # Decrease the old status count
+                desk, desk_created = Desk.objects.get_or_create(member=member)
+                if mybook.status == MyBookStatus.WISH:
+                    desk.wish_count -= 1
+                elif mybook.status == MyBookStatus.READING:
+                    desk.reading_count -= 1
+                elif mybook.status == MyBookStatus.READ:
+                    desk.read_count -= 1
+               
+        if status == MyBookStatus.WISH:
+            desk.wish_count += 1
+        elif status == MyBookStatus.READING:
+            desk.reading_count += 1
+        elif status == MyBookStatus.READ:
+            desk.read_count += 1
 
         mybook.status = status
         mybook.save()
         
         # Desk 업데이트
-        desk, desk_created = Desk.objects.get_or_create(member=member)
+        
         desk.mybooks.add(mybook)
-        desk.update_counts()
         desk.save()
         
         return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
@@ -36,9 +54,9 @@ def add_book_to_status(request, memberId, status):
     elif request.method == 'GET':
         sort_order = request.query_params.get('sort', 'newest')
         if sort_order == 'newest':
-            mybooks = MyBook.objects.filter(member=member, status=status).order_by('-book__date')
+            mybooks = MyBook.objects.filter(member=member, status=status).order_by('-deskdate')
         elif sort_order == 'oldest':
-            mybooks = MyBook.objects.filter(member=member, status=status).order_by('book__date')
+            mybooks = MyBook.objects.filter(member=member, status=status).order_by('deskdate')
         else:
             mybooks = MyBook.objects.filter(member=member, status=status)
         
@@ -54,9 +72,6 @@ def desk_view(request, memberId):
     if created:
         desk.save()
     
-    # Update counts and save desk
-    desk.update_counts()
-    desk.save()
 
     # Get all MyBooks associated with the member
     mybooks = MyBook.objects.filter(member=member)
@@ -64,9 +79,9 @@ def desk_view(request, memberId):
     # Sorting functionality
     sort_order = request.query_params.get('sort', 'newest')
     if sort_order == 'newest':
-        mybooks = mybooks.order_by('-book__date')
+        mybooks = mybooks.order_by('-deskdate')
     elif sort_order == 'oldest':
-        mybooks = mybooks.order_by('book__date')
+        mybooks = mybooks.order_by('deskdate')
 
     serializer = MyBookSerializer(mybooks, many=True)
 

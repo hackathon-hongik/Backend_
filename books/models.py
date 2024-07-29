@@ -22,6 +22,7 @@ class MyBookStatus(models.TextChoices):
     WISH = 'wish'
 
 class MyBook(models.Model):
+    deskdate = models.DateTimeField(auto_now_add=True)
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     status = models.CharField(max_length=128, choices=MyBookStatus.choices, default=MyBookStatus.WISH)
@@ -36,16 +37,6 @@ class Desk(models.Model):
     reading_count = models.PositiveIntegerField(default=0)
     wish_count = models.PositiveIntegerField(default=0)
     
-    def update_counts(self):
-        self.read_count = self.mybooks.filter(status=MyBookStatus.READ).count()
-        self.reading_count = self.mybooks.filter(status=MyBookStatus.READING).count()
-        self.wish_count = self.mybooks.filter(status=MyBookStatus.WISH).count()
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-        self.update_counts()
-        
-
     class Meta:
         db_table = 'desks'
 

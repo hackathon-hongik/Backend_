@@ -11,7 +11,7 @@ class MyBookSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MyBook
-        fields = ['member', 'book', 'status']
+        fields = ['member','deskdate', 'book', 'status']
         
     def create(self, validated_data):
         book_data = validated_data.pop('book')
