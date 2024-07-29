@@ -1,82 +1,57 @@
+from django.shortcuts import render
 from rest_framework import status as HTTPStatus
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from members.models import Member
 from books.models import Book, MyBook, Desk, MyBookStatus
-from books.serializers import BookSerializer, MyBookSerializer, DeskSerializer
+from books.serializers import MyBookSerializer, DeskSerializer
 
-@api_view(['POST'])
-def add_to_wish(request, memberId):
+@api_view(['POST', 'GET'])
+def add_book_to_status(request, memberId, status):
     member = get_object_or_404(Member, id=memberId)
-    book_data = request.data.get('book')
-    book, created = Book.objects.get_or_create(**book_data)
     
-    mybook, created = MyBook.objects.get_or_create(member=member, book=book, defaults={'status': MyBookStatus.WISH})
-    if not created:
-        mybook.status = MyBookStatus.WISH
+    if request.method == 'POST':
+        book_data = request.data.get('book')
+        if not book_data:
+            return Response({'error': 'Book data is required.'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)    
+        
+        book, created = Book.objects.get_or_create(isbn=book_data['isbn'], defaults=book_data)   
+        mybook, created = MyBook.objects.get_or_create(member=member, book=book)
+        
+        if not created and status == mybook.status:
+            return Response({'error': 'This book is already in your list with the same status.'}, status=HTTPStatus.HTTP_409_CONFLICT)
+
+        mybook.status = status
         mybook.save()
+        
+        return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
 
-    Desk.objects.get_or_create(member=member)
-    return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
-
-@api_view(['POST'])
-def add_to_reading(request, memberId):
-    member = get_object_or_404(Member, id=memberId)
-    book_data = request.data.get('book')
-    book, created = Book.objects.get_or_create(**book_data)
-    
-    # 중복 확인
-    if MyBook.objects.filter(member=member, book=book, status=MyBookStatus.READING).exists():
-        return Response({'error': 'This book is already in the reading list.'}, status=HTTPStatus.HTTP_409_CONFLICT)
-    
-    mybook, created = MyBook.objects.get_or_create(member=member, book=book, defaults={'status': MyBookStatus.READING})
-    if not created:
-        mybook.status = MyBookStatus.READING
-        mybook.save()
-
-    Desk.objects.get_or_create(member=member)
-    return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
+    elif request.method == 'GET':
+        mybooks = MyBook.objects.filter(member=member, status=status)
+        serializer = MyBookSerializer(mybooks, many=True)
+        return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
-def get_mybook(request, memberId, myBookId):
-    member = get_object_or_404(Member, id=memberId)
-    mybook = get_object_or_404(MyBook, id=myBookId, member=member)
-    return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
-
-@api_view(['GET'])
-def get_books_by_status(request, memberId, status):
-    member = get_object_or_404(Member, id=memberId)
-    if status not in [choice[0] for choice in MyBookStatus.choices]:
-        return Response({'error': 'Invalid status'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
-    
-    order_by = request.query_params.get('order_by')
-    if order_by == 'oldest':
-        mybooks = MyBook.objects.filter(member=member, status=status).order_by('id')
-    elif order_by == 'newest' or not order_by:
-        mybooks = MyBook.objects.filter(member=member, status=status).order_by('-id')
-    else:
-        return Response({'error': 'Invalid order_by value'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
-
-    return Response(MyBookSerializer(mybooks, many=True).data, status=HTTPStatus.HTTP_200_OK)
-
-@api_view(['GET'])
-def get_desk(request, memberId):
+def desk_view(request, memberId):
     member = get_object_or_404(Member, id=memberId)
     desk, created = Desk.objects.get_or_create(member=member)
-    
-    order_by = request.query_params.get('order_by')
-    if order_by == 'oldest':
-        mybooks = MyBook.objects.filter(member=member).order_by('id')
-    elif order_by == 'newest' or not order_by:
-        mybooks = MyBook.objects.filter(member=member).order_by('-id')
-    else:
-        return Response({'error': 'Invalid order_by value'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
+    if created:
+        desk.save()  # 새로 생성된 경우 저장하여 ID를 할당받음
+    desk.update_counts()
+    desk.save()  # 카운트 업데이트 후 저장
+    serializer = DeskSerializer(desk)
+    return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
-    desk_data = DeskSerializer(desk).data
-    desk_data['mybooks'] = MyBookSerializer(mybooks, many=True).data
-    
-    return Response(desk_data, status=HTTPStatus.HTTP_200_OK)
+@api_view(['GET'])
+def mybook_detail(request, memberId, isbn):
+    member = get_object_or_404(Member, id=memberId)
+    book = get_object_or_404(Book, isbn=isbn)
+    mybook = get_object_or_404(MyBook, member=member, book=book)
+    serializer = MyBookSerializer(mybook)
+    return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
+
+
 
 
 

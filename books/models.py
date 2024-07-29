@@ -5,7 +5,9 @@ class Book(models.Model):
     isbn = models.CharField(primary_key=True, max_length=300)
     title = models.CharField(max_length=128)
     author = models.CharField(max_length=128)
-    thumbnail = models.CharField(max_length=128)
+    date = models.DateTimeField(max_length=100)
+    publisher = models.CharField(max_length=128)
+    thumbnail = models.TextField()
     content = models.TextField()
     
     class Meta:
@@ -23,32 +25,29 @@ class MyBook(models.Model):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     status = models.CharField(max_length=128, choices=MyBookStatus.choices, default=MyBookStatus.WISH)
+    
+    class Meta:
+        db_table = 'mybooks'
 
 class Desk(models.Model):
     member = models.OneToOneField(Member, on_delete=models.CASCADE)
     mybooks = models.ManyToManyField(MyBook)
+    read_count = models.PositiveIntegerField(default=0)
+    reading_count = models.PositiveIntegerField(default=0)
+    wish_count = models.PositiveIntegerField(default=0)
     
-    @property
-    def read_count(self):
-        return self.mybooks.filter(status=MyBookStatus.READ).count()
-    
-    @property
-    def reading_count(self):
-        return self.mybooks.filter(status=MyBookStatus.READING).count()
-    
-    @property
-    def wish_count(self):
-        return self.mybooks.filter(status=MyBookStatus.WISH).count()
-    
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+    def update_counts(self):
         self.read_count = self.mybooks.filter(status=MyBookStatus.READ).count()
         self.reading_count = self.mybooks.filter(status=MyBookStatus.READING).count()
         self.wish_count = self.mybooks.filter(status=MyBookStatus.WISH).count()
-        super().save(update_fields=['read_count', 'reading_count', 'wish_count'])
+
+    def save(self, *args, **kwargs):
+        self.update_counts()
+        super().save(*args, **kwargs)
 
     class Meta:
         db_table = 'desks'
+
 
     
     
