@@ -34,7 +34,14 @@ def add_book_to_status(request, memberId, status):
         return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
 
     elif request.method == 'GET':
-        mybooks = MyBook.objects.filter(member=member, status=status)
+        sort_order = request.query_params.get('sort', 'newest')
+        if sort_order == 'newest':
+            mybooks = MyBook.objects.filter(member=member, status=status).order_by('-book__date')
+        elif sort_order == 'oldest':
+            mybooks = MyBook.objects.filter(member=member, status=status).order_by('book__date')
+        else:
+            mybooks = MyBook.objects.filter(member=member, status=status)
+        
         serializer = MyBookSerializer(mybooks, many=True)
         return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
@@ -53,6 +60,14 @@ def desk_view(request, memberId):
 
     # Get all MyBooks associated with the member
     mybooks = MyBook.objects.filter(member=member)
+    
+    # Sorting functionality
+    sort_order = request.query_params.get('sort', 'newest')
+    if sort_order == 'newest':
+        mybooks = mybooks.order_by('-book__date')
+    elif sort_order == 'oldest':
+        mybooks = mybooks.order_by('book__date')
+
     serializer = MyBookSerializer(mybooks, many=True)
 
     # Serialize desk data with mybooks
