@@ -31,7 +31,7 @@ class MyBook(models.Model):
 
 class Desk(models.Model):
     member = models.OneToOneField(Member, on_delete=models.CASCADE)
-    mybooks = models.ManyToManyField(MyBook)
+    mybooks = models.ManyToManyField(MyBook, related_name='desks')
     read_count = models.PositiveIntegerField(default=0)
     reading_count = models.PositiveIntegerField(default=0)
     wish_count = models.PositiveIntegerField(default=0)
@@ -42,8 +42,9 @@ class Desk(models.Model):
         self.wish_count = self.mybooks.filter(status=MyBookStatus.WISH).count()
 
     def save(self, *args, **kwargs):
-        self.update_counts()
         super().save(*args, **kwargs)
+        self.update_counts()
+        
 
     class Meta:
         db_table = 'desks'

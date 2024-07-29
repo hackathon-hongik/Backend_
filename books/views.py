@@ -25,6 +25,12 @@ def add_book_to_status(request, memberId, status):
         mybook.status = status
         mybook.save()
         
+        # Desk 업데이트
+        desk, desk_created = Desk.objects.get_or_create(member=member)
+        desk.mybooks.add(mybook)
+        desk.update_counts()
+        desk.save()
+        
         return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
 
     elif request.method == 'GET':
@@ -36,12 +42,29 @@ def add_book_to_status(request, memberId, status):
 def desk_view(request, memberId):
     member = get_object_or_404(Member, id=memberId)
     desk, created = Desk.objects.get_or_create(member=member)
+    
+    # Ensure desk object is saved to have an ID for many-to-many relation
     if created:
-        desk.save()  # 새로 생성된 경우 저장하여 ID를 할당받음
+        desk.save()
+    
+    # Update counts and save desk
     desk.update_counts()
-    desk.save()  # 카운트 업데이트 후 저장
-    serializer = DeskSerializer(desk)
-    return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
+    desk.save()
+
+    # Get all MyBooks associated with the member
+    mybooks = MyBook.objects.filter(member=member)
+    serializer = MyBookSerializer(mybooks, many=True)
+
+    # Serialize desk data with mybooks
+    response_data = {
+        'member': member.id,
+        'mybooks': serializer.data,
+        'reading_count': desk.reading_count,
+        'read_count': desk.read_count,
+        'wish_count': desk.wish_count
+    }
+    
+    return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
 def mybook_detail(request, memberId, isbn):
