@@ -24,6 +24,8 @@ def add_book_to_status(request, memberId, status):
         if not created:
             if mybook.status == status:
                 return Response({'error': 'This book is already in your list with the same status.'}, status=HTTPStatus.HTTP_409_CONFLICT)
+            elif mybook.status == MyBookStatus.READING and status == MyBookStatus.WISH:
+                return Response({'error': 'Cannot add a reading book to wish list.'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
             else:
                 # Decrease the old status count
                 desk, desk_created = Desk.objects.get_or_create(member=member)
