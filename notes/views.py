@@ -5,6 +5,9 @@ from django.shortcuts import get_object_or_404
 
 from .models import LongReview, ShortReview, Member, MyBook
 from .serializers import LongReviewSerializer, ShortReviewSerializer
+#patch(수정) 바꿔야함
+#로그인 후 보기 권한 추가해야함
+#질문 자동으로 뜨도록 수정해야함
 
 @api_view(['GET', 'POST'])
 def long_review_list_create(request, memberID, myBookId):
