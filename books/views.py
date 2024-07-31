@@ -99,12 +99,50 @@ def desk_view(request, memberId):
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
+def desk_group_view(request, memberId, status):
+    member = get_object_or_404(Member, id=memberId)
+    desk, created = Desk.objects.get_or_create(member=member)
+    
+    # Ensure desk object is saved to have an ID for many-to-many relation
+    if created:
+        desk.save()
+    
+    # Get MyBooks associated with the member filtered by status
+    mybooks = MyBook.objects.filter(member=member, status=status)
+    
+    # Sorting functionality
+    sort_order = request.query_params.get('sort', 'newest')
+    if sort_order == 'newest':
+        mybooks = mybooks.order_by('-deskdate')
+    elif sort_order == 'oldest':
+        mybooks = mybooks.order_by('deskdate')
+
+    serializer = MyBookSerializer(mybooks, many=True)
+
+    # Serialize desk data with filtered mybooks
+    response_data = {
+        'member': member.id,
+        'mybooks': serializer.data,
+        'reading_count': desk.reading_count,
+        'read_count': desk.read_count,
+        'wish_count': desk.wish_count
+    }
+    
+    return Response(response_data, status=HTTPStatus.HTTP_200_OK)
+
+
+
+
+
+@api_view(['GET'])
 def mybook_detail(request, memberId, isbn):
     member = get_object_or_404(Member, id=memberId)
     book = get_object_or_404(Book, isbn=isbn)
     mybook = get_object_or_404(MyBook, member=member, book=book)
     serializer = MyBookSerializer(mybook)
     return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
+
+
 
 
 
