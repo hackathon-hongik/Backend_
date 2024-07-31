@@ -141,13 +141,18 @@ def mybook_detail(request, memberId, isbn):
 @api_view(['GET'])
 def mainpage_view(request, memberId):
     member = get_object_or_404(Member, id=memberId)
-    mybooks = MyBook.objects.filter(member=member, status=MyBookStatus.READING).order_by('-deskdate')[:2]  # 최근 등록한 2권의 책
+    # 서재에 담긴 책 중 reading 상태인 최신 2권
+    mybooks = MyBook.objects.filter(member=member, status=MyBookStatus.READING).order_by('-deskdate')[:2]
+
+    # 서재에 담긴 읽고 있는 책의 수
+    reading_count = MyBook.objects.filter(member=member, status=MyBookStatus.READING).count()
 
     serializer = MyBookSerializer(mybooks, many=True)
     
     response_data = {
         'member': member.id,
-        'recent_reading_books': serializer.data
+        'recent_reading_books': serializer.data,
+        'reading_count': reading_count
     }
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
