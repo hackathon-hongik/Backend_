@@ -27,14 +27,5 @@ class DeskSerializer(serializers.ModelSerializer):
     class Meta:
         model = Desk
         fields = ['mybooks', 'reading_count', 'read_count', 'wish_count']
-
-
-    
-    
-    
-    
-    
-    
-    
-    
+ 
     

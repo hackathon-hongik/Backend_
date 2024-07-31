@@ -39,9 +39,3 @@ class Desk(models.Model):
     
     class Meta:
         db_table = 'desks'
-
-
-    
-    
-    
-    

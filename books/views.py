@@ -1,8 +1,7 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from rest_framework import status as HTTPStatus
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from members.models import Member
 from books.models import Book, MyBook, Desk, MyBookStatus
 from books.serializers import MyBookSerializer, DeskSerializer
@@ -131,9 +130,6 @@ def desk_group_view(request, memberId, status):
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 
-
-
-
 @api_view(['GET'])
 def mybook_detail(request, memberId, isbn):
     member = get_object_or_404(Member, id=memberId)
@@ -141,6 +137,22 @@ def mybook_detail(request, memberId, isbn):
     mybook = get_object_or_404(MyBook, member=member, book=book)
     serializer = MyBookSerializer(mybook)
     return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
+
+@api_view(['GET'])
+def mainpage_view(request, memberId):
+    member = get_object_or_404(Member, id=memberId)
+    mybooks = MyBook.objects.filter(member=member).order_by('-deskdate')[:2]  # 최근 등록한 2권의 책
+
+    serializer = MyBookSerializer(mybooks, many=True)
+    
+    response_data = {
+        'member': member.id,
+        'recent_books': serializer.data
+    }
+    
+    return Response(response_data, status=HTTPStatus.HTTP_200_OK)
+
+
 
 
 
