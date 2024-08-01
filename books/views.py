@@ -1,21 +1,23 @@
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status as HTTPStatus
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from members.models import Member
+from auths.models import CustomUser
 from books.models import Book, MyBook, Desk, MyBookStatus
 from books.serializers import MyBookSerializer, DeskSerializer
 
 @api_view(['POST', 'GET'])
-def add_book_to_status(request, memberId, status):
-    member = get_object_or_404(Member, id=memberId)
+@permission_classes([IsAuthenticated])
+def add_book_to_status(request, status):
+    member = request.user  # 인증된 사용자 가져오기
     
     if request.method == 'POST':
         book_data = request.data.get('book')
         if not book_data:
-            return Response({'error': 'Book data is required.'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)    
+            return Response({'error': 'Book data is required.'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
         
-        book, created = Book.objects.get_or_create(isbn=book_data['isbn'], defaults=book_data)   
+        book, created = Book.objects.get_or_create(isbn=book_data['isbn'], defaults=book_data)
         mybook, created = MyBook.objects.get_or_create(member=member, book=book)
         
         desk, desk_created = Desk.objects.get_or_create(member=member)
@@ -26,32 +28,28 @@ def add_book_to_status(request, memberId, status):
             elif mybook.status == MyBookStatus.READING and status == MyBookStatus.WISH:
                 return Response({'error': 'Cannot add a reading book to wish list.'}, status=HTTPStatus.HTTP_400_BAD_REQUEST)
             else:
-                # Decrease the old status count
-                desk, desk_created = Desk.objects.get_or_create(member=member)
                 if mybook.status == MyBookStatus.WISH:
                     desk.wish_count -= 1
                 elif mybook.status == MyBookStatus.READING:
                     desk.reading_count -= 1
                 elif mybook.status == MyBookStatus.READ:
                     desk.read_count -= 1
-               
+                
         if status == MyBookStatus.WISH:
             desk.wish_count += 1
         elif status == MyBookStatus.READING:
             desk.reading_count += 1
         elif status == MyBookStatus.READ:
             desk.read_count += 1
-
+        
         mybook.status = status
         mybook.save()
-        
-        # Desk 업데이트
         
         desk.mybooks.add(mybook)
         desk.save()
         
         return Response(MyBookSerializer(mybook).data, status=HTTPStatus.HTTP_200_OK)
-
+    
     elif request.method == 'GET':
         sort_order = request.query_params.get('sort', 'newest')
         if sort_order == 'newest':
@@ -65,28 +63,24 @@ def add_book_to_status(request, memberId, status):
         return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
-def desk_view(request, memberId):
-    member = get_object_or_404(Member, id=memberId)
+@permission_classes([IsAuthenticated])
+def desk_view(request):
+    member = request.user  # 인증된 사용자 가져오기
     desk, created = Desk.objects.get_or_create(member=member)
     
-    # Ensure desk object is saved to have an ID for many-to-many relation
     if created:
         desk.save()
     
-
-    # Get all MyBooks associated with the member
     mybooks = MyBook.objects.filter(member=member)
     
-    # Sorting functionality
     sort_order = request.query_params.get('sort', 'newest')
     if sort_order == 'newest':
         mybooks = mybooks.order_by('-deskdate')
     elif sort_order == 'oldest':
         mybooks = mybooks.order_by('deskdate')
-
+    
     serializer = MyBookSerializer(mybooks, many=True)
-
-    # Serialize desk data with mybooks
+    
     response_data = {
         'member': member.id,
         'mybooks': serializer.data,
@@ -98,27 +92,24 @@ def desk_view(request, memberId):
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
-def desk_group_view(request, memberId, status):
-    member = get_object_or_404(Member, id=memberId)
+@permission_classes([IsAuthenticated])
+def desk_group_view(request, status):
+    member = request.user  # 인증된 사용자 가져오기
     desk, created = Desk.objects.get_or_create(member=member)
     
-    # Ensure desk object is saved to have an ID for many-to-many relation
     if created:
         desk.save()
     
-    # Get MyBooks associated with the member filtered by status
     mybooks = MyBook.objects.filter(member=member, status=status)
     
-    # Sorting functionality
     sort_order = request.query_params.get('sort', 'newest')
     if sort_order == 'newest':
         mybooks = mybooks.order_by('-deskdate')
     elif sort_order == 'oldest':
         mybooks = mybooks.order_by('deskdate')
-
+    
     serializer = MyBookSerializer(mybooks, many=True)
-
-    # Serialize desk data with filtered mybooks
+    
     response_data = {
         'member': member.id,
         'mybooks': serializer.data,
@@ -129,24 +120,23 @@ def desk_group_view(request, memberId, status):
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
-
 @api_view(['GET'])
-def mybook_detail(request, memberId, isbn):
-    member = get_object_or_404(Member, id=memberId)
+@permission_classes([IsAuthenticated])
+def mybook_detail(request, isbn):
+    member = request.user  # 인증된 사용자 가져오기
     book = get_object_or_404(Book, isbn=isbn)
     mybook = get_object_or_404(MyBook, member=member, book=book)
     serializer = MyBookSerializer(mybook)
     return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET'])
-def mainpage_view(request, memberId):
-    member = get_object_or_404(Member, id=memberId)
-    # 서재에 담긴 책 중 reading 상태인 최신 2권
+@permission_classes([IsAuthenticated])
+def mainpage_view(request):
+    member = request.user  # 인증된 사용자 가져오기
+    
     mybooks = MyBook.objects.filter(member=member, status=MyBookStatus.READING).order_by('-deskdate')[:2]
-
-    # 서재에 담긴 읽고 있는 책의 수
     reading_count = MyBook.objects.filter(member=member, status=MyBookStatus.READING).count()
-
+    
     serializer = MyBookSerializer(mybooks, many=True)
     
     response_data = {
@@ -156,16 +146,3 @@ def mainpage_view(request, memberId):
     }
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
-
-
-
-
-
-
-
-
-
-
-
-        
-    

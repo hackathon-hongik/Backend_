@@ -1,5 +1,5 @@
 from django.db import models
-from members.models import Member 
+from auths.models import CustomUser
 
 class Book(models.Model):
     isbn = models.CharField(primary_key=True, max_length=300)
@@ -22,8 +22,8 @@ class MyBookStatus(models.TextChoices):
     WISH = 'wish'
 
 class MyBook(models.Model):
-    deskdate = models.DateTimeField(auto_now_add=True)
-    member = models.ForeignKey(Member, on_delete=models.CASCADE)
+    deskdate = models.DateTimeField(auto_now=True)
+    member = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     status = models.CharField(max_length=128, choices=MyBookStatus.choices, default=MyBookStatus.WISH)
     
@@ -31,7 +31,7 @@ class MyBook(models.Model):
         db_table = 'mybooks'
 
 class Desk(models.Model):
-    member = models.OneToOneField(Member, on_delete=models.CASCADE)
+    member = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
     mybooks = models.ManyToManyField(MyBook, related_name='desks')
     read_count = models.PositiveIntegerField(default=0)
     reading_count = models.PositiveIntegerField(default=0)
