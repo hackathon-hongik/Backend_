@@ -47,8 +47,8 @@ INSTALLED_APPS = [
     
     'auths',
     'books',
-    #'communities',
-    #'notes',
+    'communities',
+    'notes',
     'recommendations',
     
     'corsheaders',
