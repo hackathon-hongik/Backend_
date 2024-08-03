@@ -5,19 +5,17 @@ from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from notes.models import LongReview, ShortReview
 from notes.serializers import LongReviewRequestSerializer, LongReviewSerializer, ShortReviewRequestSerializer, ShortReviewSerializer
-from books.models import Book
+from books.models import Book, MyBook, MyBookStatus
 
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticated])
 def long_review_list(request, isbn):
-    member = request.user
-    isbn_clean = isbn.replace(" ", "")
+    member = request.user  # 인증된 사용자 가져오기
+    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
     book = get_object_or_404(Book, isbn=isbn_clean)
 
     if request.method == 'POST':
         data = request.data
-        data['writer'] = member.id
-        data['book'] = book.isbn
         serializer = LongReviewRequestSerializer(data=data)
         if serializer.is_valid():
             long_review = serializer.save(writer=member, book=book)
@@ -38,8 +36,8 @@ def long_review_list(request, isbn):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def long_review_detail(request, isbn, id):
-    member = request.user
-    isbn_clean = isbn.replace(" ", "")
+    member = request.user  # 인증된 사용자 가져오기
+    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
     book = get_object_or_404(Book, isbn=isbn_clean)
     long_review = get_object_or_404(LongReview, book=book, writer=member, id=id)
 
@@ -52,7 +50,7 @@ def long_review_detail(request, isbn, id):
     elif request.method == 'PATCH':
         serializer = LongReviewRequestSerializer(long_review, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            long_review = serializer.save()
             response_serializer = LongReviewSerializer(long_review)
             response_data = response_serializer.data
             response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
@@ -66,14 +64,12 @@ def long_review_detail(request, isbn, id):
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticated])
 def short_review_list(request, isbn):
-    member = request.user
-    isbn_clean = isbn.replace(" ", "")
+    member = request.user  # 인증된 사용자 가져오기
+    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
     book = get_object_or_404(Book, isbn=isbn_clean)
 
     if request.method == 'POST':
         data = request.data
-        data['writer'] = member.id
-        data['book'] = book.isbn
         serializer = ShortReviewRequestSerializer(data=data)
         if serializer.is_valid():
             short_review = serializer.save(writer=member, book=book)
@@ -94,8 +90,8 @@ def short_review_list(request, isbn):
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def short_review_detail(request, isbn, id):
-    member = request.user
-    isbn_clean = isbn.replace(" ", "")
+    member = request.user  # 인증된 사용자 가져오기
+    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
     book = get_object_or_404(Book, isbn=isbn_clean)
     short_review = get_object_or_404(ShortReview, book=book, writer=member, id=id)
 
@@ -108,7 +104,7 @@ def short_review_detail(request, isbn, id):
     elif request.method == 'PATCH':
         serializer = ShortReviewRequestSerializer(short_review, data=request.data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            short_review = serializer.save()
             response_serializer = ShortReviewSerializer(short_review)
             response_data = response_serializer.data
             response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환

@@ -19,7 +19,7 @@ class LongReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LongReview
-        fields = ['id', 'writer', 'created_at', 'book', 'long_note']
+        fields = ['id', 'writer', 'created_at','updated_at', 'book', 'long_note']
 
     def get_long_note(self, obj):
         return {
@@ -34,7 +34,7 @@ class LongReviewSerializer(serializers.ModelSerializer):
 class ShortReviewRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = ShortReview
-        fields = ['start_page', 'end_page', 'read_complete', 'mood', 'question', 'answer', 'short_comment', 'long_title', 'long_text', 'open']
+        fields = ['start_page', 'end_page', 'read_complete', 'mood', 'question', 'answer', 'short_comment', 'open']
 
 class ShortReviewSerializer(serializers.ModelSerializer):
     writer = serializers.CharField(source='writer.nickname')
@@ -43,7 +43,7 @@ class ShortReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ShortReview
-        fields = ['id', 'writer', 'created_at', 'book', 'short_note']
+        fields = ['id', 'writer', 'created_at','updated_at', 'book', 'short_note']
 
     def get_short_note(self, obj):
         return {
@@ -54,7 +54,5 @@ class ShortReviewSerializer(serializers.ModelSerializer):
             'question': obj.get_question_display(),
             'answer': obj.answer,
             'short_comment': obj.short_comment,
-            'long_title': obj.long_title,
-            'long_text': obj.long_text,
             'open': obj.open
         }

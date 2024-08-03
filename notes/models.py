@@ -1,37 +1,13 @@
-# notes/models.py
 from django.db import models
 from auths.models import CustomUser
-from books.models import Book
-
-class LongReview(models.Model):
-    writer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    book = models.ForeignKey(Book, on_delete=models.CASCADE)
-    start_page = models.PositiveIntegerField()
-    end_page = models.PositiveIntegerField()
-    read_complete = models.BooleanField(default=False)
-    long_title = models.CharField(max_length=255)
-    long_text = models.TextField()
-    open = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        db_table = 'long_reviews'
-    
-    def __str__(self):
-        return self.long_title
-
-
-from django.db import models
-from auths.models import CustomUser
-from books.models import Book
+from books.models import Book, MyBook, MyBookStatus
 
 class MoodChoices(models.TextChoices):
-    GOOD = 'good', '좋아요'
-    OKAY = 'okay', '괜찮아요'
-    TIRED = 'tired', '피곤해요'
-    SAD = 'sad', '슬퍼요'
-    WORRIED = 'worried', '걱정돼요'
+    GOOD = 'good', 'Good'
+    OKAY = 'okay', 'Okay'
+    TIRED = 'tired', 'Tired'
+    SAD = 'sad', 'Sad'
+    WORRIED = 'worried', 'Worried'
 
 class QuestionChoices(models.TextChoices):
     Q1 = 'Q1', '오늘 읽은 책이 나에게 어떤 도움이 될 수 있을까요?'
@@ -49,8 +25,34 @@ class ShortReview(models.Model):
     read_complete = models.BooleanField(default=False)
     mood = models.CharField(max_length=10, choices=MoodChoices.choices)
     question = models.CharField(max_length=10, choices=QuestionChoices.choices)
-    answer = models.CharField(max_length=200)
-    short_comment = models.TextField()
+    answer = models.CharField(max_length=400)
+    short_comment = models.CharField(max_length=300)
+    open = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'short_reviews'
+
+    def __str__(self):
+        return self.short_comment
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.read_complete:
+            isbn_clean = self.book.isbn.replace(" ", "")  # ISBN에서 공백 제거
+            book, created = Book.objects.get_or_create(isbn=isbn_clean)
+            mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
+            if mybook.status != MyBookStatus.READ:
+                mybook.status = MyBookStatus.READ
+                mybook.save()
+
+class LongReview(models.Model):
+    writer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    start_page = models.PositiveIntegerField()
+    end_page = models.PositiveIntegerField()
+    read_complete = models.BooleanField(default=False)
     long_title = models.CharField(max_length=255)
     long_text = models.TextField()
     open = models.BooleanField(default=True)
@@ -58,17 +60,17 @@ class ShortReview(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = 'short_reviews'
-    
+        db_table = 'long_reviews'
+
     def __str__(self):
         return self.long_title
 
-# class MoodCount(models.Model):
-#     member = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-#     book = models.ForeignKey(MyBook, on_delete=models.CASCADE)
-
-#     good_count = models.PositiveIntegerField(default=0)
-#     okay_count = models.PositiveIntegerField(default=0)
-#     tired_count = models.PositiveIntegerField(default=0)
-#     sad_count = models.PositiveIntegerField(default=0)
-#     worried_count = models.PositiveIntegerField(default=0)
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.read_complete:
+            isbn_clean = self.book.isbn.replace(" ", "")  # ISBN에서 공백 제거
+            book, created = Book.objects.get_or_create(isbn=isbn_clean)
+            mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
+            if mybook.status != MyBookStatus.READ:
+                mybook.status = MyBookStatus.READ
+                mybook.save()
