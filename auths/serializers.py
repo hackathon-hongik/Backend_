@@ -14,15 +14,24 @@ class UserSerializer(serializers.ModelSerializer):
     def validate(self, data):
         # 비밀번호 일치 여부 검사
         if data['password'] != data['password2']:
-            raise serializers.ValidationError({"password": "The two password fields didn't match."})
+            raise serializers.ValidationError(
+                {"password": "The two password fields didn't match."},
+                code='password_mismatch'
+            )
         
         # 이메일 중복 여부 검사
         if User.objects.filter(email=data['email']).exists():
-            raise serializers.ValidationError({"email": "This email is already in use."})
+            raise serializers.ValidationError(
+                {"email": "This email is already in use."},
+                code='email_exists'
+            )
         
         # 닉네임 중복 여부 검사
         if User.objects.filter(nickname=data['nickname']).exists():
-            raise serializers.ValidationError({"nickname": "This nickname is already in use."})
+            raise serializers.ValidationError(
+                {"nickname": "This nickname is already in use."},
+                code='nickname_exists'
+            )
         
         return data
 

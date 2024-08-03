@@ -14,7 +14,15 @@ def register_view(request):
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        if 'password' in serializer.errors:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        elif 'email' in serializer.errors:
+            return Response(serializer.errors, status=status.HTTP_409_CONFLICT)
+        elif 'nickname' in serializer.errors:
+            return Response(serializer.errors, status=status.HTTP_406_NOT_ACCEPTABLE)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PATCH'])
 @permission_classes([permissions.IsAuthenticated])
