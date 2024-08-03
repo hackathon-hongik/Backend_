@@ -6,13 +6,19 @@ from django.shortcuts import get_object_or_404
 from notes.models import LongReview, ShortReview
 from notes.serializers import LongReviewRequestSerializer, LongReviewSerializer, ShortReviewRequestSerializer, ShortReviewSerializer
 from books.models import Book, MyBook, MyBookStatus
+import urllib.parse
+
+def decode_isbn(isbn):
+    return urllib.parse.unquote(isbn)
 
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticated])
 def long_review_list(request, isbn):
     member = request.user  # 인증된 사용자 가져오기
-    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
-    book = get_object_or_404(Book, isbn=isbn_clean)
+    isbn_decoded = decode_isbn(isbn)  # ISBN에서 URL 인코딩 제거
+    
+    # Book 객체가 데이터베이스에 존재하는지 확인
+    book = get_object_or_404(Book, isbn=isbn_decoded)
 
     if request.method == 'POST':
         data = request.data
@@ -21,7 +27,7 @@ def long_review_list(request, isbn):
             long_review = serializer.save(writer=member, book=book)
             response_serializer = LongReviewSerializer(long_review)
             response_data = response_serializer.data
-            response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
             return Response(response_data, status=HTTPStatus.HTTP_201_CREATED)
         return Response(serializer.errors, status=HTTPStatus.HTTP_400_BAD_REQUEST)
 
@@ -30,21 +36,21 @@ def long_review_list(request, isbn):
         serializer = LongReviewSerializer(long_reviews, many=True)
         response_data = serializer.data
         for item in response_data:
-            item['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            item['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
         return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def long_review_detail(request, isbn, id):
     member = request.user  # 인증된 사용자 가져오기
-    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
-    book = get_object_or_404(Book, isbn=isbn_clean)
+    isbn_decoded = decode_isbn(isbn)  # ISBN에서 URL 인코딩 제거
+    book = get_object_or_404(Book, isbn=isbn_decoded)
     long_review = get_object_or_404(LongReview, book=book, writer=member, id=id)
 
     if request.method == 'GET':
         serializer = LongReviewSerializer(long_review)
         response_data = serializer.data
-        response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+        response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
         return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
     elif request.method == 'PATCH':
@@ -53,7 +59,7 @@ def long_review_detail(request, isbn, id):
             long_review = serializer.save()
             response_serializer = LongReviewSerializer(long_review)
             response_data = response_serializer.data
-            response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
             return Response(response_data, status=HTTPStatus.HTTP_200_OK)
         return Response(serializer.errors, status=HTTPStatus.HTTP_400_BAD_REQUEST)
 
@@ -65,8 +71,10 @@ def long_review_detail(request, isbn, id):
 @permission_classes([IsAuthenticated])
 def short_review_list(request, isbn):
     member = request.user  # 인증된 사용자 가져오기
-    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
-    book = get_object_or_404(Book, isbn=isbn_clean)
+    isbn_decoded = decode_isbn(isbn)  # ISBN에서 URL 인코딩 제거
+    
+    # Book 객체가 데이터베이스에 존재하는지 확인
+    book = get_object_or_404(Book, isbn=isbn_decoded)
 
     if request.method == 'POST':
         data = request.data
@@ -75,7 +83,7 @@ def short_review_list(request, isbn):
             short_review = serializer.save(writer=member, book=book)
             response_serializer = ShortReviewSerializer(short_review)
             response_data = response_serializer.data
-            response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
             return Response(response_data, status=HTTPStatus.HTTP_201_CREATED)
         return Response(serializer.errors, status=HTTPStatus.HTTP_400_BAD_REQUEST)
 
@@ -84,21 +92,21 @@ def short_review_list(request, isbn):
         serializer = ShortReviewSerializer(short_reviews, many=True)
         response_data = serializer.data
         for item in response_data:
-            item['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            item['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
         return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
 @api_view(['GET', 'PATCH', 'DELETE'])
 @permission_classes([IsAuthenticated])
 def short_review_detail(request, isbn, id):
     member = request.user  # 인증된 사용자 가져오기
-    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
-    book = get_object_or_404(Book, isbn=isbn_clean)
+    isbn_decoded = decode_isbn(isbn)  # ISBN에서 URL 인코딩 제거
+    book = get_object_or_404(Book, isbn=isbn_decoded)
     short_review = get_object_or_404(ShortReview, book=book, writer=member, id=id)
 
     if request.method == 'GET':
         serializer = ShortReviewSerializer(short_review)
         response_data = serializer.data
-        response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+        response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
         return Response(response_data, status=HTTPStatus.HTTP_200_OK)
 
     elif request.method == 'PATCH':
@@ -107,7 +115,7 @@ def short_review_detail(request, isbn, id):
             short_review = serializer.save()
             response_serializer = ShortReviewSerializer(short_review)
             response_data = response_serializer.data
-            response_data['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+            response_data['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
             return Response(response_data, status=HTTPStatus.HTTP_200_OK)
         return Response(serializer.errors, status=HTTPStatus.HTTP_400_BAD_REQUEST)
 
@@ -119,8 +127,8 @@ def short_review_detail(request, isbn, id):
 @permission_classes([IsAuthenticated])
 def short_review_mood_list(request, isbn):
     member = request.user  # 인증된 사용자 가져오기
-    isbn_clean = isbn.replace(" ", "")  # ISBN에서 공백 제거
-    book = get_object_or_404(Book, isbn=isbn_clean)
+    isbn_decoded = decode_isbn(isbn)  # ISBN에서 URL 인코딩 제거
+    book = get_object_or_404(Book, isbn=isbn_decoded)
 
     short_reviews = ShortReview.objects.filter(book=book)
     serializer = ShortReviewSerializer(short_reviews, many=True)
@@ -135,6 +143,6 @@ def short_review_mood_list(request, isbn):
     }
     
     for item in response_data["short_notes"]:
-        item['book']['isbn'] = isbn  # 원래 공백이 포함된 ISBN 반환
+        item['book']['isbn'] = isbn  # 디코딩된 ISBN 반환
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
