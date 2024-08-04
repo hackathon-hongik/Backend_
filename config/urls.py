@@ -23,4 +23,5 @@ urlpatterns = [
     path('', include('books.urls')),
     path('', include('recommendations.urls') ),
     path('', include('notes.urls') ),
+    path('communities/', include('communities.urls')),
 ]
