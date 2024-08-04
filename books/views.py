@@ -2,11 +2,14 @@ from django.db import models
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status as HTTPStatus
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from auths.models import CustomUser
 from books.models import Book, MyBook, Desk, MyBookStatus
 from books.serializers import MyBookSerializer, DeskSerializer
+from notes.models import ShortReview
+from communities.models import ShortReviewLike
+from communities.serializers import ShortReviewSerializer
 
 @api_view(['POST', 'GET'])
 @permission_classes([IsAuthenticated])
@@ -166,4 +169,17 @@ def mainpage_view(request):
     }
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def mainpage_beforelogin_view(request):
+    # ShortReview 중에서 like_count가 10개 이상인 리뷰들을 필터링
+    popular_reviews = ShortReview.objects.annotate(like_count=models.Count('shortreviewlike')).filter(like_count__gte=10)
+    popular_reviews_serializer = ShortReviewSerializer(popular_reviews, many=True, context={'request': request})
+    
+    response_data = {
+        'popular_reviews': popular_reviews_serializer.data  # 인기 있는 리뷰들을 포함
+    }
+    
+    return Response(response_data, status=HTTPStatus.HTTP_200_OK)    
 

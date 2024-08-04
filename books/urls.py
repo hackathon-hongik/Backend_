@@ -1,5 +1,5 @@
 from django.urls import path
-from books.views import add_book_to_status, desk_view, desk_group_view, mybook_detail, mainpage_view
+from books.views import add_book_to_status, desk_view, desk_group_view, mybook_detail, mainpage_view, mainpage_beforelogin_view
 from books.models import MyBookStatus
 
 urlpatterns = [
@@ -10,4 +10,5 @@ urlpatterns = [
     path('desk/books/<str:isbn>/', mybook_detail, name='mybook_detail'),
     path('desk/books/group/<str:status>/', desk_group_view, name='desk_group_view'),
     path('mainpage/', mainpage_view, name='mainpage_view'),
+    path('mainpage-beforelogin/', mainpage_beforelogin_view, name='mainpage_beforelogin'),
 ]
