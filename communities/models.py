@@ -13,17 +13,8 @@ class LongReviewComment(models.Model):
     comment = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-class LongReviewScrap(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    review = models.ForeignKey(LongReview, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
 class ShortReviewLike(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     review = models.ForeignKey(ShortReview, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
 
-class ShortReviewScrap(models.Model):
-    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
-    review = models.ForeignKey(ShortReview, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
