@@ -22,7 +22,7 @@ class ShortReview(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     start_page = models.PositiveIntegerField()
     end_page = models.PositiveIntegerField()
-    read_complete = models.BooleanField(default=False)
+    read_complete = models.BooleanField()
     mood = models.CharField(max_length=10, choices=MoodChoices.choices)
     question = models.CharField(max_length=10, choices=QuestionChoices.choices)
     answer = models.CharField(max_length=400)
@@ -40,8 +40,18 @@ class ShortReview(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.read_complete:
-            isbn_clean = self.book.isbn.replace(" ", "")  # ISBN에서 공백 제거
-            book, created = Book.objects.get_or_create(isbn=isbn_clean)
+            # 공백이 포함된 ISBN을 사용하여 Book 객체 생성 또는 조회
+            book, created = Book.objects.get_or_create(
+                isbn=self.book.isbn,
+                defaults={
+                    'title': self.book.title,
+                    'author': self.book.author,
+                    'date': self.book.date,
+                    'publisher': self.book.publisher,
+                    'thumbnail': self.book.thumbnail,
+                    'content': self.book.content
+                }
+            )
             mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
             if mybook.status != MyBookStatus.READ:
                 mybook.status = MyBookStatus.READ
@@ -52,7 +62,7 @@ class LongReview(models.Model):
     book = models.ForeignKey(Book, on_delete=models.CASCADE)
     start_page = models.PositiveIntegerField()
     end_page = models.PositiveIntegerField()
-    read_complete = models.BooleanField(default=False)
+    read_complete = models.BooleanField()
     long_title = models.CharField(max_length=255)
     long_text = models.TextField()
     open = models.BooleanField(default=True)
@@ -68,8 +78,18 @@ class LongReview(models.Model):
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
         if self.read_complete:
-            isbn_clean = self.book.isbn.replace(" ", "")  # ISBN에서 공백 제거
-            book, created = Book.objects.get_or_create(isbn=isbn_clean)
+            # 공백이 포함된 ISBN을 사용하여 Book 객체 생성 또는 조회
+            book, created = Book.objects.get_or_create(
+                isbn=self.book.isbn,
+                defaults={
+                    'title': self.book.title,
+                    'author': self.book.author,
+                    'date': self.book.date,
+                    'publisher': self.book.publisher,
+                    'thumbnail': self.book.thumbnail,
+                    'content': self.book.content
+                }
+            )
             mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
             if mybook.status != MyBookStatus.READ:
                 mybook.status = MyBookStatus.READ
