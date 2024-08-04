@@ -11,7 +11,7 @@ class LongReviewListView(generics.ListAPIView):
     serializer_class = LongReviewSerializer
 
     def get_queryset(self):
-        return LongReview.objects.filter(open=True)
+        return LongReview.objects.filter(open=True).order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -25,7 +25,7 @@ class LongReviewDetailView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        return LongReview.objects.filter(open=True)
+        return LongReview.objects.filter(open=True).order_by('-created_at')
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -39,7 +39,7 @@ class ShortReviewListView(generics.ListAPIView):
     serializer_class = ShortReviewSerializer
 
     def get_queryset(self):
-        return ShortReview.objects.filter(open=True)
+        return ShortReview.objects.filter(open=True).order_by('-created_at')
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -53,7 +53,7 @@ class ShortReviewDetailView(generics.RetrieveAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        return ShortReview.objects.filter(open=True)
+        return ShortReview.objects.filter(open=True).order_by('-created_at')
 
     def get_object(self):
         queryset = self.get_queryset()
@@ -65,7 +65,7 @@ class ShortReviewDetailView(generics.RetrieveAPIView):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def long_review_like(request, id):
-    queryset = LongReview.objects.filter(open=True)
+    queryset = LongReview.objects.filter(open=True).order_by('-created_at')
     review_id_list = list(queryset.values_list('id', flat=True))
     actual_id = review_id_list[int(id) - 1]
     review = get_object_or_404(LongReview, id=actual_id, open=True)
@@ -77,11 +77,10 @@ def long_review_like(request, id):
         LongReviewLike.objects.create(review=review, user=user)
         return Response(status=status.HTTP_201_CREATED)
 
-
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def long_review_comment(request, id):
-    queryset = LongReview.objects.filter(open=True)
+    queryset = LongReview.objects.filter(open=True).order_by('-created_at')
     review_id_list = list(queryset.values_list('id', flat=True))
     actual_id = review_id_list[int(id) - 1]
     review = get_object_or_404(LongReview, id=actual_id, open=True)
@@ -96,7 +95,7 @@ def long_review_comment(request, id):
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
 def short_review_like(request, id):
-    queryset = ShortReview.objects.filter(open=True)
+    queryset = ShortReview.objects.filter(open=True).order_by('-created_at')
     review_id_list = list(queryset.values_list('id', flat=True))
     actual_id = review_id_list[int(id) - 1]
     review = get_object_or_404(ShortReview, id=actual_id, open=True)
@@ -107,5 +106,3 @@ def short_review_like(request, id):
     else:
         ShortReviewLike.objects.create(review=review, user=user)
         return Response(status=status.HTTP_201_CREATED)
-
-
