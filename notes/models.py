@@ -1,6 +1,6 @@
 from django.db import models
 from auths.models import CustomUser
-from books.models import Book, MyBook, MyBookStatus
+from books.models import Book, MyBook, MyBookStatus, Desk
 
 class MoodChoices(models.TextChoices):
     GOOD = 'good', 'Good'
@@ -53,9 +53,20 @@ class ShortReview(models.Model):
                 }
             )
             mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
+            desk, created = Desk.objects.get_or_create(member=self.writer)
+            
+            # 기존 상태에 따른 카운트 감소
+            if mybook.status == MyBookStatus.READING:
+                desk.reading_count -= 1
+            elif mybook.status == MyBookStatus.WISH:
+                desk.wish_count -= 1
+            
+            # 새로운 상태에 따른 카운트 증가
             if mybook.status != MyBookStatus.READ:
                 mybook.status = MyBookStatus.READ
                 mybook.save()
+                desk.read_count += 1
+                desk.save()
 
 class LongReview(models.Model):
     writer = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
@@ -91,6 +102,17 @@ class LongReview(models.Model):
                 }
             )
             mybook, created = MyBook.objects.get_or_create(member=self.writer, book=book)
+            desk, created = Desk.objects.get_or_create(member=self.writer)
+            
+            # 기존 상태에 따른 카운트 감소
+            if mybook.status == MyBookStatus.READING:
+                desk.reading_count -= 1
+            elif mybook.status == MyBookStatus.WISH:
+                desk.wish_count -= 1
+            
+            # 새로운 상태에 따른 카운트 증가
             if mybook.status != MyBookStatus.READ:
                 mybook.status = MyBookStatus.READ
                 mybook.save()
+                desk.read_count += 1
+                desk.save()

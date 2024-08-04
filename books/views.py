@@ -68,8 +68,10 @@ def desk_view(request):
     member = request.user  # 인증된 사용자 가져오기
     desk, created = Desk.objects.get_or_create(member=member)
     
-    if created:
-        desk.save()
+    desk.read_count = MyBook.objects.filter(member=member, status=MyBookStatus.READ).count()
+    desk.reading_count = MyBook.objects.filter(member=member, status=MyBookStatus.READING).count()
+    desk.wish_count = MyBook.objects.filter(member=member, status=MyBookStatus.WISH).count()
+    desk.save()
     
     mybooks = MyBook.objects.filter(member=member)
     
