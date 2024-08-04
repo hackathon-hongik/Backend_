@@ -1,3 +1,4 @@
+from django.db import models  
 from django.shortcuts import render, get_object_or_404
 from rest_framework import status as HTTPStatus
 from rest_framework.decorators import api_view, permission_classes
@@ -131,6 +132,18 @@ def mybook_detail(request, isbn):
     serializer = MyBookSerializer(mybook)
     return Response(serializer.data, status=HTTPStatus.HTTP_200_OK)
 
+from django.shortcuts import render, get_object_or_404
+from rest_framework import status as HTTPStatus
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from auths.models import CustomUser
+from books.models import Book, MyBook, Desk, MyBookStatus
+from books.serializers import MyBookSerializer, DeskSerializer
+from notes.models import ShortReview
+from communities.models import ShortReviewLike
+from communities.serializers import ShortReviewSerializer  # 이 줄을 추가합니다.
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def mainpage_view(request):
@@ -139,12 +152,18 @@ def mainpage_view(request):
     mybooks = MyBook.objects.filter(member=member, status=MyBookStatus.READING).order_by('-deskdate')[:2]
     reading_count = MyBook.objects.filter(member=member, status=MyBookStatus.READING).count()
     
-    serializer = MyBookSerializer(mybooks, many=True)
+    mybooks_serializer = MyBookSerializer(mybooks, many=True)
+
+    # ShortReview 중에서 like_count가 10개 이상인 리뷰들을 필터링
+    popular_reviews = ShortReview.objects.annotate(like_count=models.Count('shortreviewlike')).filter(like_count__gte=10)
+    popular_reviews_serializer = ShortReviewSerializer(popular_reviews, many=True, context={'request': request})
     
     response_data = {
         'member': member.id,
-        'recent_reading_books': serializer.data,
-        'reading_count': reading_count
+        'recent_reading_books': mybooks_serializer.data,
+        'reading_count': reading_count,
+        'popular_reviews': popular_reviews_serializer.data  # 인기 있는 리뷰들을 포함
     }
     
     return Response(response_data, status=HTTPStatus.HTTP_200_OK)
+
